@@ -59,6 +59,12 @@ class UserModel {
         await User.update({ password }, { where: { id } });
     }
 
+    async getPasswordRecords() {
+        return User.findAll({
+            attributes: ['id', 'password']
+        });
+    }
+
     async getDependents(parentId) {
         return await User.findAll({
             where: { parentId },

@@ -18,13 +18,3 @@ Aplicação web para registro de receitas e despesas, organização por categori
 
 React, React Router.
 
----
-
-## Como rodar o projeto localmente
-
-```powershell
-cd expenses_frontend
-npm install
-npm run dev
-```
-

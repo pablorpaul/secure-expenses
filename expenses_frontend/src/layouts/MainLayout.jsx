@@ -8,9 +8,12 @@ function MainLayout({ children }){
     const { logout, user } = useContext(AuthContext);
     const navigate = useNavigate();
 
-    function handleLogout(){
-        logout();
-        navigate('/');
+    async function handleLogout(){
+        try {
+            await logout();
+        } finally {
+            navigate('/');
+        }
     }
 
     return (

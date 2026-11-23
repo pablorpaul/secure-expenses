@@ -13,12 +13,12 @@ async function hashPassword(password) {
 }
 
 async function verifyPassword(password, storedPassword) {
-    if (!storedPassword.startsWith('scrypt$')) {
-        return storedPassword === password;
+    if (typeof password !== 'string' || typeof storedPassword !== 'string' || !storedPassword.startsWith('scrypt$')) {
+        return false;
     }
 
     const [, salt, storedKey] = storedPassword.split('$');
-    if (!salt || !storedKey || !/^[a-f0-9]{128}$/i.test(storedKey)) {
+    if (!/^[a-f0-9]{32}$/i.test(salt) || !/^[a-f0-9]{128}$/i.test(storedKey)) {
         return false;
     }
     const key = await scrypt(password, salt, 64);
@@ -30,19 +30,26 @@ class User {
     }
 
     async login(email, password){
+        if (typeof email !== 'string' || typeof password !== 'string' || !password) {
+            throw new Error('Credenciais inválidas');
+        }
+
+        email = email.trim().toLowerCase();
         const user = await UserModel.getUserByEmail(email);
 
         if (!user || !await verifyPassword(password, user.password)) {
             throw new Error('Credenciais inválidas');
         }
-        if (!user.password.startsWith('scrypt$')) {
-            await UserModel.updatePassword(user.id, await hashPassword(password));
-        }
 
         const token = jwt.sign(
             { id: user.id, email: user.email },
             authConfig.jwt.secret,
-            { expiresIn: authConfig.jwt.expiresIn }
+            {
+                algorithm: 'HS256',
+                expiresIn: authConfig.jwt.expiresIn,
+                issuer: authConfig.jwt.issuer,
+                audience: authConfig.jwt.audience
+            }
         );
 
         return {
@@ -76,23 +83,34 @@ class User {
     }
 
     async create(name, email, password, role = 'parent', parentId = null){
-        if(!name?.trim()) {
+        if(typeof name !== 'string' || !name.trim() || name.trim().length > 100) {
             throw new Error("Missing required fields: name");
         }
-        if(!email?.trim()) {
+        if(typeof email !== 'string' || email.trim().length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
             throw new Error("Missing required fields: email");
         }
-        if(!password || password.length < 6) {
-            throw new Error("A senha deve ter pelo menos 6 caracteres");
+        if(typeof password !== 'string' || password.length < 8 || password.length > 128) {
+            throw new Error("A senha deve ter entre 8 e 128 caracteres");
         }
 
         email = email.trim().toLowerCase();
+        name = name.trim();
         const existingUser = await UserModel.getUserByEmail(email);
         if (existingUser) {
             throw new Error('Já existe um usuário com este e-mail');
         }
 
         return UserModel.create(name, email, await hashPassword(password), role, parentId);
+    }
+
+    async migrateLegacyPasswords() {
+        const users = await UserModel.getPasswordRecords();
+        for (const user of users) {
+            if (typeof user.password !== 'string' || user.password.startsWith('scrypt$')) {
+                continue;
+            }
+            await UserModel.updatePassword(user.id, await hashPassword(user.password));
+        }
     }
 
     async getDependents(parentId) {

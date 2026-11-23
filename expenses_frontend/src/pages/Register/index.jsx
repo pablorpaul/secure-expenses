@@ -90,8 +90,8 @@ export default function Register() {
                             name="password"
                             type="password"
                             autoComplete="new-password"
-                            minLength="6"
-                            placeholder="Pelo menos 6 caracteres"
+                            minLength="8"
+                            placeholder="Pelo menos 8 caracteres"
                             value={form.password}
                             onChange={handleChange}
                             required
@@ -105,7 +105,7 @@ export default function Register() {
                             name="confirmPassword"
                             type="password"
                             autoComplete="new-password"
-                            minLength="6"
+                            minLength="8"
                             placeholder="Digite a senha novamente"
                             value={form.confirmPassword}
                             onChange={handleChange}
