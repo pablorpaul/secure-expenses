@@ -1,20 +1,42 @@
 const UserModel = require('../models/user.js');
 const jwt = require('jsonwebtoken');
 const authConfig = require('../config/auth');
+const crypto = require('crypto');
+const { promisify } = require('util');
+
+const scrypt = promisify(crypto.scrypt);
+
+async function hashPassword(password) {
+    const salt = crypto.randomBytes(16).toString('hex');
+    const key = await scrypt(password, salt, 64);
+    return `scrypt$${salt}$${key.toString('hex')}`;
+}
+
+async function verifyPassword(password, storedPassword) {
+    if (!storedPassword.startsWith('scrypt$')) {
+        return storedPassword === password;
+    }
+
+    const [, salt, storedKey] = storedPassword.split('$');
+    if (!salt || !storedKey || !/^[a-f0-9]{128}$/i.test(storedKey)) {
+        return false;
+    }
+    const key = await scrypt(password, salt, 64);
+    return crypto.timingSafeEqual(key, Buffer.from(storedKey, 'hex'));
+}
 
 class User {
     constructor(){
     }
 
-    replacePassword(password) {
-        return '*'.repeat(password.lenght);
-    }
-
     async login(email, password){
         const user = await UserModel.getUserByEmail(email);
 
-        if (!user || user.password !== password) {
+        if (!user || !await verifyPassword(password, user.password)) {
             throw new Error('Credenciais inválidas');
+        }
+        if (!user.password.startsWith('scrypt$')) {
+            await UserModel.updatePassword(user.id, await hashPassword(password));
         }
 
         const token = jwt.sign(
@@ -29,23 +51,16 @@ class User {
         };
     }
 
-    mapUser(user) {
+    mapPublicUser(user) {
         const userData = user.dataValues || user;
 
         return {
-            ...userData,
-            password:this.replacePassword(userData.password)
+            id: userData.id,
+            name: userData.name,
+            email: userData.email,
+            role: userData.role,
+            parentId: userData.parentId
         };
-    }
-
-    mapPublicUser(user){
-        const mapped = this.mapUser(user);
-
-        return {
-            id: mapped.id,
-            email: mapped.email
-        }
-
     }
 
     getAll(){
@@ -60,42 +75,41 @@ class User {
         return UserModel.getById(id);
     }
 
-    async create(name, email, password){
-        if(!name) {
+    async create(name, email, password, role = 'parent', parentId = null){
+        if(!name?.trim()) {
             throw new Error("Missing required fields: name");
         }
-        if(!email) {
+        if(!email?.trim()) {
             throw new Error("Missing required fields: email");
         }
-        if(!password) {
-            throw new Error("Missing required fields: password");
+        if(!password || password.length < 6) {
+            throw new Error("A senha deve ter pelo menos 6 caracteres");
         }
 
-        return await UserModel.create(name, email, password);
+        email = email.trim().toLowerCase();
+        const existingUser = await UserModel.getUserByEmail(email);
+        if (existingUser) {
+            throw new Error('Já existe um usuário com este e-mail');
+        }
+
+        return UserModel.create(name, email, await hashPassword(password), role, parentId);
     }
 
-    update(id, name, email, password){
-        if(!id){
-            throw new Error("Missing required fields: id");
-        }
-        if(!name) {
-            throw new Error("Missing required fields: name");
-        }
-        if(!email) {
-            throw new Error("Missing required fields: email");
-        }
-        if(!password) {
-            throw new Error("Missing required fields: password");
-        }
-
-        return UserModel.update(id, name, email, password);
+    async getDependents(parentId) {
+        return UserModel.getDependents(parentId);
     }
 
-    delete(id){
-        if (!id){
-            throw new Error("Missing required fields: id");
+    async createDependent(parentId, name, email, password) {
+        const parent = await UserModel.getById(parentId);
+        if (!parent || parent.role !== 'parent') {
+            throw new Error('Apenas responsáveis podem cadastrar dependentes');
         }
-        return UserModel.deleteUser(id);
+
+        return this.create(name, email, password, 'child', parent.id);
+    }
+
+    async getAccessibleUserIds(id) {
+        return UserModel.getAccessibleUserIds(id);
     }
 }
 

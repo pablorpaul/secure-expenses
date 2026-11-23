@@ -1,11 +1,11 @@
-import  { Outlet, Link, useNavigate } from "react-router-dom";
-import { AuthContext } from "../contexts/AuthContext";
+import { Link, useNavigate } from "react-router-dom";
+import { AuthContext } from "../contexts/auth-context";
 import { useContext } from "react";
 import "../styles/MainLayout/MainLayout.css";
 
 
 function MainLayout({ children }){
-    const { logout } = useContext(AuthContext);
+    const { logout, user } = useContext(AuthContext);
     const navigate = useNavigate();
 
     function handleLogout(){
@@ -21,16 +21,16 @@ function MainLayout({ children }){
                 </div>
                 <nav className="sidebar-nav">
                     <Link to="/dashboard" className="nav-item">Dashboard</Link>
-                    <Link to="/expenses" className="nav-item">Despesas</Link>
+                    <Link to="/expenses" className="nav-item">Lançamentos</Link>
                     <Link to="/categories" className="nav-item">Categorias</Link>
-                    <Link to="/#" className="nav-item">Usuário</Link>
+                    {user?.role === 'parent' && <Link to="/family" className="nav-item">Controle parental</Link>}
                 </nav>
             </aside>
             
             <main className="main-content">
                 <header className="main-header">
                     <div className="user-info">
-                        <span>Painel Principal</span>
+                        <span>{user?.name || 'Painel Principal'}</span>
                     </div>
                     <button className="btn-logout" onClick={handleLogout}>
                         Sair

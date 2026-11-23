@@ -44,13 +44,32 @@ class User {
 
     async create(req, res) {
         try {
-            const { name, email, password } = req.body;
+            const { name, email, password } = req.body || {};
 
-            const newUser = UserController.create(name, email, password);
+            const newUser = await UserController.create(name, email, password);
 
-            res.status(201).json(newUser);
+            return res.status(201).json(UserController.mapPublicUser(newUser));
         } catch(error) {
-            res.status(400).json({ error: error.message });
+            return res.status(400).json({ error: error.message });
+        }
+    }
+
+    async getDependents(req, res) {
+        try {
+            const dependents = await UserController.getDependents(req.user.id);
+            return res.status(200).json(dependents);
+        } catch (error) {
+            return res.status(400).json({ error: error.message });
+        }
+    }
+
+    async createDependent(req, res) {
+        try {
+            const { name, email, password } = req.body || {};
+            const dependent = await UserController.createDependent(req.user.id, name, email, password);
+            return res.status(201).json(UserController.mapPublicUser(dependent));
+        } catch (error) {
+            return res.status(400).json({ error: error.message });
         }
     }
 
