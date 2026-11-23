@@ -1,4 +1,5 @@
 const UserController = require('../controllers/user.js');
+const authConfig = require('../config/auth');
 
 class User {
     constructor(){
@@ -13,10 +14,34 @@ class User {
             }
 
             const auth = await UserController.login(email, password);
-            return res.json(auth);
+            res.cookie(
+                authConfig.session.cookieName,
+                auth.token,
+                authConfig.session.cookieOptions
+            );
+            return res.json({ user: auth.user });
         } catch (error) {
             console.error('Error em login', error);
             return res.status(401).json({ error: error.message });
+        }
+    }
+
+    logout(req, res) {
+        const { cookieName, cookieOptions } = authConfig.session;
+        const { maxAge, ...clearOptions } = cookieOptions;
+        res.clearCookie(cookieName, clearOptions);
+        return res.status(204).end();
+    }
+
+    async getCurrent(req, res) {
+        try {
+            const user = await UserController.getById(req.user.id);
+            if (!user) {
+                return res.status(401).json({ error: 'Sessão inválida' });
+            }
+            return res.status(200).json(UserController.mapPublicUser(user));
+        } catch (error) {
+            return res.status(400).json({ error: error.message });
         }
     }
 
