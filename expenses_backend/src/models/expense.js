@@ -92,6 +92,7 @@ module.exports = new Expense();*/
 
 const { sequelize } = require('./db');
 const { DataTypes } = require('sequelize');
+const { Op } = require('sequelize');
 
 const Expense = sequelize.define('expenses', {
     id: {
@@ -124,13 +125,28 @@ const Expense = sequelize.define('expenses', {
         allowNull: false
     },
     amount: {
-        type: DataTypes.FLOAT
+        type: DataTypes.DECIMAL(10, 2),
+        allowNull: false
+    },
+    type: {
+        type: DataTypes.ENUM('income', 'expense'),
+        allowNull: false,
+        defaultValue: 'expense'
     },
     date: {
         type: DataTypes.DATEONLY
     },
     description: {
         type: DataTypes.TEXT
+    },
+    attachmentPath: {
+        type: DataTypes.STRING
+    },
+    attachmentName: {
+        type: DataTypes.STRING
+    },
+    attachmentMimeType: {
+        type: DataTypes.STRING
     },
     createdAt: {
         type: DataTypes.DATE
@@ -141,31 +157,32 @@ const Expense = sequelize.define('expenses', {
 class ExpenseModel {
     constructor() {}
 
-    async getAll(){
-        return await Expense.findAll();
+    async getAll(userIds, selectedUserId){
+        const where = {
+            userId: selectedUserId || { [Op.in]: userIds }
+        };
+        return await Expense.findAll({
+            where,
+            order: [['date', 'DESC'], ['id', 'DESC']]
+        });
     }
 
     async getById(id){
         return await Expense.findByPk(id);
     }
 
-    async create(categoryId, userId, title, amount, date, description){
-        return await Expense.create({ categoryId, userId, title, amount, date, description})
+    async create(values){
+        return await Expense.create(values)
     }
 
-    async update(id, categoryId, userId, title, amount, date, description) {
+    async update(id, values) {
         const expense = await this.getById(id);
 
         if(!expense){
             return null;
         }
 
-        expense.categoryId = categoryId;
-        expense.userId = userId;
-        expense.title = title;
-        expense.amount = amount;
-        expense.date = date;
-        expense.description = description;
+        Object.assign(expense, values);
 
         await expense.save();
         return expense;
@@ -182,17 +199,21 @@ class ExpenseModel {
         return null;
     }
 
-    async getSummaryTotal() {
-        const expenses = await this.getAll();
-
-        let total = 0;
-
-        expenses.forEach(exp => total += exp.amount);
-        return total.toFixed(2);
+    async getSummaryTotal(userIds) {
+        const expenses = await Expense.findAll({
+            where: { userId: { [Op.in]: userIds } },
+            attributes: ['amount', 'type']
+        });
+        return expenses.reduce((total, expense) => {
+            const amount = Number(expense.amount);
+            return total + (expense.type === 'income' ? amount : -amount);
+        }, 0).toFixed(2);
     }
 
-    async getSumByCategory(){
-        const expenses = await this.getAll();
+    async getSumByCategory(userIds){
+        const expenses = await Expense.findAll({
+            where: { userId: { [Op.in]: userIds } }
+        });
 
         const sumCategory = expenses.reduce((acumulador, expense) => {
                 if(!acumulador[expense.categoryId]){
@@ -207,12 +228,14 @@ class ExpenseModel {
             return sumCategory;
     }
 
-    async getCount() {
-        return await Expense.count();
+    async getCount(userIds) {
+        return await Expense.count({
+            where: { userId: { [Op.in]: userIds } }
+        });
     }
 }
 
 const expenseModel = new ExpenseModel();
-expenseModel.expense = Expense;
+expenseModel.Expense = Expense;
 
 module.exports = expenseModel;

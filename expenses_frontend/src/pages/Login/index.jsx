@@ -1,11 +1,13 @@
 import { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AuthContext } from "../../contexts/AuthContext";
+import { Link, useLocation } from "react-router-dom";
+import { AuthContext } from "../../contexts/auth-context";
 import "../../styles/Login/Login.css"
 
 function Login(){
     const { login } = useContext(AuthContext)
     const navigate = useNavigate()
+    const location = useLocation()
 
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
@@ -33,6 +35,7 @@ function Login(){
                 <form onSubmit={handleSubmit} className="login-form">
                     <h1>Login</h1>
                     <p className="login-subtitle">Realize o login para acessar suas Despesas</p>
+                    {location.state?.message && <div className="success-message" role="status">{location.state.message}</div>}
                     <div className="input-group">
                         <label htmlFor="email">E-mail</label>
                         <input
@@ -60,6 +63,9 @@ function Login(){
                     <button className="btn-submit "type="submit" disabled={loading}>
                         {loading ? 'Entrando...' : 'Entrar'}
                     </button>
+                    <p className="auth-switch">
+                        Ainda não tem uma conta? <Link to="/register">Cadastre-se</Link>
+                    </p>
                 </form>
             </div>
         </div>

@@ -1,0 +1,131 @@
+.family-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.family-card {
+  padding: 24px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.family-card h2 {
+  margin: 0 0 20px;
+  color: #1e293b;
+  font-size: 1.15rem;
+}
+
+.family-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.family-form-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: #475569;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.family-form-grid input {
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font: inherit;
+}
+
+.family-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.family-member {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.family-member > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.family-member span,
+.family-note {
+  color: #64748b;
+}
+
+.family-role {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #e0f2fe;
+  color: #0369a1 !important;
+  font-size: 0.8rem;
+}
+
+.family-note {
+  margin: 16px 0 0;
+  font-size: 0.9rem;
+}
+
+.family-page .btn-primary {
+  padding: 10px 20px;
+  border: 0;
+  border-radius: 6px;
+  background: #3b82f6;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.family-page .btn-primary:hover {
+  background: #2563eb;
+}
+
+.family-page .alert-message {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1e40af;
+}
+
+.family-page .btn-close-alert {
+  border: 0;
+  background: none;
+  color: inherit;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.family-page .badge-count {
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.family-page .no-data {
+  color: #64748b;
+}
+
+@media (max-width: 640px) {
+  .family-card {
+    padding: 18px;
+  }
+}

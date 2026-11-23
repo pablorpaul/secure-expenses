@@ -18,6 +18,21 @@ const User = sequelize.define('users', {
     password: {
         type: DataTypes.STRING,
         allowNull: false
+    },
+    role: {
+        type: DataTypes.ENUM('parent', 'child'),
+        allowNull: false,
+        defaultValue: 'parent'
+    },
+    parentId: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+            model: 'users',
+            key: 'id'
+        },
+        onDelete: 'CASCADE',
+        onUpdate: 'CASCADE'
     }
 })
 
@@ -36,36 +51,37 @@ class UserModel {
         return await User.findByPk(id);
     }
 
-    async create(name, email, password){
-        return await User.create({ name, email, password })
+    async create(name, email, password, role = 'parent', parentId = null){
+        return await User.create({ name, email, password, role, parentId })
     }
 
-    async update(id, name, email, password) {
-        const user = await getById(id);
-
-        if(!user){
-            return null;
-        }
-
-        user.title = title;
-        user.amount = amount;
-        user.category = category;
-        user.date = date;
-        user.description = description;
-
-        await user.save();
-        return user;
+    async updatePassword(id, password) {
+        await User.update({ password }, { where: { id } });
     }
 
-    async deleteUser(id) {
-        const user = await getById(id);
+    async getDependents(parentId) {
+        return await User.findAll({
+            where: { parentId },
+            attributes: ['id', 'name', 'email', 'role', 'parentId'],
+            order: [['name', 'ASC']]
+        });
+    }
 
+    async getAccessibleUserIds(id) {
+        const user = await this.getById(id);
         if (!user) {
-            return null
+            return [];
         }
 
-        await User.destroy();
-        return null;
+        if (user.role !== 'parent') {
+            return [user.id];
+        }
+
+        const dependents = await User.findAll({
+            where: { parentId: user.id },
+            attributes: ['id']
+        });
+        return [user.id, ...dependents.map((dependent) => dependent.id)];
     }
 }
 

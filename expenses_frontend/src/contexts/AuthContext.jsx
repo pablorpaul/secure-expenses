@@ -1,22 +1,19 @@
-import { createContext, useState, useEffect } from 'react';
+import { useState } from 'react';
+import { AuthContext } from './auth-context';
 import api from '../services/api'
 
-export const AuthContext = createContext()
-
 export function AuthProvider({ children }) {
-    const [user, setUser] = useState(null)
-    const [loading, setLoading] = useState(true)
-
-    useEffect(() => {
+    const [user, setUser] = useState(() => {
         const token = localStorage.getItem('token')
         const savedUser = localStorage.getItem('user')
 
-        if (token && savedUser){
-            setUser(JSON.parse(savedUser))
+        if (token && savedUser) {
+            const parsedUser = JSON.parse(savedUser)
+            return { ...parsedUser, role: parsedUser.role || 'parent' }
         }
-
-        setLoading(false)
-    }, [])
+        return null
+    })
+    const loading = false
 
     async function login(email, password){
         const response = await api.post('/users/login', { email, password})

@@ -4,8 +4,8 @@ class Expense {
     constructor(){
     }
 
-    async getAll(){
-        return await ExpenseModel.getAll();
+    async getAll(userIds, selectedUserId){
+        return await ExpenseModel.getAll(userIds, selectedUserId);
     }
 
     async getById(id){
@@ -16,35 +16,40 @@ class Expense {
         return await ExpenseModel.getById(id);
     }
 
-    async create(categoryId, userId, title, amount, date, description){
-        if (!title) {
-            throw new Error("Missing required fields: title");
+    async create(values){
+        const { title, amount, date } = values;
+        if (!title || !values.categoryId || !values.userId || !date) {
+            throw new Error("Preencha os campos obrigatórios");
         }
-        if (amount < 0) {
-            throw new Error("Error: Amount must be greater than zero");
+        if (!Number.isFinite(Number(amount)) || Number(amount) <= 0) {
+            throw new Error("O valor deve ser maior que zero");
         }
-        const hoje = new Date();
-        if (Date.parse(date) > hoje){
-            throw new Error("Error: The date entered cannot be later than the current date");
+        if (!['income', 'expense'].includes(values.type)) {
+            throw new Error("Tipo de lançamento inválido");
         }
-        return await ExpenseModel.create(categoryId, userId, title, amount, date, description);
+        if (Number.isNaN(Date.parse(date)) || Date.parse(date) > Date.now()) {
+            throw new Error("A data informada é inválida ou futura");
+        }
+        return ExpenseModel.create(values);
     }
 
-    update(id, categoryId, userId, title, amount, date, description){
+    async update(id, values){
         if (!id){
             throw new Error("Missing required fields: id");
         }
-        if (!title) {
+        if (!values.title) {
             throw new Error("Missing required fields: title");
         }
-        if (amount < 0) {
-            throw new Error("Error: Amount must be greater than zero");
+        if (!Number.isFinite(Number(values.amount)) || Number(values.amount) <= 0) {
+            throw new Error("O valor deve ser maior que zero");
         }
-        const hoje = new Date();
-        if (Date.parse(date) > hoje){
-            throw new Error("Error: The date entered cannot be later than the current date");
+        if (!['income', 'expense'].includes(values.type)) {
+            throw new Error("Tipo de lançamento inválido");
         }
-        const expense = ExpenseModel.update(id, categoryId, userId, title, amount, date, description);
+        if (!values.date || Number.isNaN(Date.parse(values.date)) || Date.parse(values.date) > Date.now()) {
+            throw new Error("A data informada é inválida ou futura");
+        }
+        const expense = await ExpenseModel.update(id, values);
         if(!expense){
             throw new Error("Expense not found");
         }
@@ -58,16 +63,16 @@ class Expense {
         return await ExpenseModel.deleteExpense(id);
     }
 
-    getSummaryTotal(){
-        return ExpenseModel.getSummaryTotal();
+    getSummaryTotal(userIds){
+        return ExpenseModel.getSummaryTotal(userIds);
     }
 
-    async getSumByCategory(){
-        return await ExpenseModel.getSumByCategory();
+    async getSumByCategory(userIds){
+        return await ExpenseModel.getSumByCategory(userIds);
     }
 
-    async getCount(){
-        return await ExpenseModel.getCount();
+    async getCount(userIds){
+        return await ExpenseModel.getCount(userIds);
     }
 }
 

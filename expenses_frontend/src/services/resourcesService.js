@@ -11,12 +11,19 @@ export const categoriesService = {
 };
 
 export const expensesService = {
-    list: () => api.get('/expenses').then(unwrap),
+    list: (userId) => api.get('/expenses', { params: userId ? { userId } : {} }).then(unwrap),
     getById: (id) => api.get(`/expenses/${id}`).then(unwrap),
     create: (payload) => api.post('/expenses', payload).then(unwrap),
     update: (id, payload) => api.put(`/expenses/${id}`, payload).then(unwrap),
     remove: (id) => api.delete(`/expenses/${id}`).then(unwrap),
+    downloadAttachment: (id) => api.get(`/expenses/${id}/attachment`, { responseType: 'blob' }),
     calculateTotal: () => api.get('/expenses/summary/total').then(unwrap),
     totalByCategory: () => api.get('/expenses/summary/category').then(unwrap),
     count: () => api.get('/expenses/summary/count').then(unwrap),
+};
+
+export const usersService = {
+    register: (payload) => api.post('/users', payload).then(unwrap),
+    dependents: () => api.get('/users/dependents').then(unwrap),
+    createDependent: (payload) => api.post('/users/dependents', payload).then(unwrap),
 };

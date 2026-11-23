@@ -138,3 +138,6 @@ vite.config.ts.timestamp-*
 
 #env files
 .env
+
+# Uploaded financial receipts
+uploads/
